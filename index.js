@@ -9,12 +9,17 @@ const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 
-// Usa WebSocketServer en lugar de WebSocket.Server
-const wss = new WebSocketServer({ server });  // ¡Corrección aquí!
+const wss = new WebSocketServer({ server });
 const documents = new Map();
 
+let document = {
+    content: '',
+    propetaryId: '',
+    users: []
+}
+
 wss.on('connection', (ws, req) => {
-  const documentId = req.url.split('/')[1] || 'default-doc';
+  const documentId = req.url;
   ws.id = uuidv4();
   
   if (!documents.has(documentId)) {
@@ -39,19 +44,28 @@ wss.on('connection', (ws, req) => {
 
   ws.on('message', (message) => {
     const data = JSON.parse(message);
+    console.log(data)
+
+    document.propetaryId = '16162'
+
+    if (!document.users.includes(data.userId)) {
+        document.content = data.content
+        document.users.push(data.userId)
+    }
+    console.log(document)
     
     if (data.type === 'update') {
       doc.content = data.content;
       
       // Retransmitir a todos excepto al remitente
-      doc.clients.forEach(client => {
+      document.users.forEach(client => {
         if (client !== ws && client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({
-            type: 'update',
-            content: data.content,
-            senderId: ws.id
-          }));
-        }
+            client.send(JSON.stringify({
+              type: 'update',
+              content: document.content,
+              senderId: document.pro
+            }));
+          }
       });
     }
   });
